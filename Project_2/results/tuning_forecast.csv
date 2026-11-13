@@ -1,2 +1,3 @@
 id,base,learning_rate,max_iter,max_leaf_nodes,min_samples_leaf,l2_regularization,max_features,val_mae_2025-10-01,val_mae_2026-02-01,val_mae_mean,seconds
 0,True,0.08,400,48,100,0.0,1.0,1375.7167346068475,1384.3779352635418,1380.0473349351946,55
+1,False,0.05,500,128,1000,0.0,0.5,1358.5694940470082,1379.731119266282,1369.1503066566452,106
