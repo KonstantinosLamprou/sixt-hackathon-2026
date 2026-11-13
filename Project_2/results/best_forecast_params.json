@@ -9,6 +9,8 @@
   },
   "alpha": 1.0,
   "use_extra_features": false,
-  "val_mae_tuned": 1355.2518300472311,
-  "val_mae_base_cfg": 1380.0473349351946
+  "val_mae_used": 1365.1,
+  "val_mae_without_extra": 1365.1,
+  "val_mae_with_extra": 1355.2518300472311,
+  "val_mae_untuned_cfg": 1380.0473349351946
 }

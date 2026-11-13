@@ -143,8 +143,10 @@ def main():
     score_a = float(a_scores[alpha])
     use_extra = score_x < 0.99 * score_a
     print(f"Status-Historie-Features: val MAE {score_x:.1f} gegen {score_a:.1f} ohne -> {'UEBERNOMMEN' if use_extra else 'verworfen'}")
-    json.dump({"cfg": cfg, "alpha": alpha, "use_extra_features": use_extra, "val_mae_tuned": min(score_x, score_a),
-               "val_mae_base_cfg": base_score}, open(RESULTS / "best_forecast_params.json", "w"), indent=2)
+    json.dump({"cfg": cfg, "alpha": alpha, "use_extra_features": use_extra,
+               "val_mae_used": score_x if use_extra else score_a, "val_mae_without_extra": score_a,
+               "val_mae_with_extra": score_x, "val_mae_untuned_cfg": base_score},
+              open(RESULTS / "best_forecast_params.json", "w"), indent=2)
 
     # ---- 5. Endbewertung auf dem Holdout --------------------------------------------------------------------------
     out = []
