@@ -2,8 +2,8 @@
 # Single entry point for the whole pipeline.   Usage:  ./run.sh <command> [<command> ...]
 #
 #   ./run.sh setup        create .venv and install requirements
-#   ./run.sh submission   rebuild the submission files from the saved parameters (about 5 min)
-#   ./run.sh all          everything, including tuning and all evaluations (about 1 h)
+#   ./run.sh submission   rebuild the submission files from the saved parameters (about 2 min)
+#   ./run.sh all          everything, including tuning and all evaluations (about 40 min)
 #   ./run.sh <step> ...   single steps, in any order:
 #       explore  baselines  coldstart  nowcast  tuning  save_nowcast  backtest  partb  predict  export  slides
 set -euo pipefail
