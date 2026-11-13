@@ -81,13 +81,22 @@ def main():
 
     # ---- 2 forecast -------------------------------------------------------------------------------------------------------
     f = page("Forecast: 133 days ahead", "Gradient boosting on the mileage increment since the last known reading; error in km (MAE), lower is better")
-    ax = f.add_axes([0.07, 0.14, 0.50, 0.60])
+    ax = f.add_axes([0.07, 0.27, 0.50, 0.47])
     x = np.arange(len(allh)); w = 0.26
-    for i, (col, lab, c) in enumerate([("b_last", "Naive: last value", GREY), ("b_segment", "Best rule: class median rate x days", MUTED), ("m_tuned", "Model", ACCENT)]):
+    for i, (col, lab, c) in enumerate([("b_last", "Naive: last value", GREY), ("b_segment", "Best rule (formula below)", MUTED), ("m_tuned", "Model", ACCENT)]):
         bars = ax.bar(x + (i - 1) * w, allh[col], w, label=lab, color=c)
         ax.bar_label(bars, labels=[f"{v:,.0f}" for v in allh[col]], fontsize=9.5, padding=2)
-    ax.set_xticks(x, [cut_lab[c] for c in allh.index], fontsize=10.5); ax.set_ylabel("MAE (km)"); ax.legend(frameon=False, fontsize=10.5)
+    ax.set_xticks(x, [cut_lab[c] for c in allh.index], fontsize=10.5); ax.set_ylabel("MAE (km)")
+    ax.set_ylim(0, allh[["b_last", "b_segment", "m_tuned"]].values.max() * 1.45); ax.legend(frameon=False, fontsize=10.5, loc="upper right")
     ax.set_title("Held-out vehicles, 3 cut-off dates", fontsize=12.5, color=INK, loc="left")
+    box = f.add_axes([0.05, 0.035, 0.53, 0.165]); box.axis("off")
+    box.add_patch(FancyBboxPatch((0, 0), 1, 1, boxstyle="round,pad=0,rounding_size=0.04", fc="#f4f6f8", ec="none", transform=box.transAxes))
+    box.text(0.03, 0.84, "How the comparison rules predict", fontsize=11, fontweight="bold", color=INK, va="center", transform=box.transAxes)
+    box.text(0.03, 0.62, "Naive:", fontsize=10.5, fontweight="bold", color=MUTED, va="center", transform=box.transAxes)
+    box.text(0.17, 0.62, "prediction = last known mileage", fontsize=10.5, color=INK, va="center", transform=box.transAxes)
+    box.text(0.03, 0.42, "Best rule:", fontsize=10.5, fontweight="bold", color=MUTED, va="center", transform=box.transAxes)
+    box.text(0.17, 0.42, "prediction = last known mileage + class rate x days since the last reading", fontsize=10.5, color=INK, va="center", transform=box.transAxes)
+    box.text(0.17, 0.18, "class rate = median km/day of the vehicles of the same class (Standard, Intermediate,\nFull Size) over the 90 days before the cut-off date", fontsize=9, color=MUTED, va="center", transform=box.transAxes, linespacing=1.3)
     y0 = 0.74
     f.text(0.62, y0, "Model beats the best rule by", fontsize=13, color=MUTED)
     for i, (c, g) in enumerate(best_rule_gain.items()):

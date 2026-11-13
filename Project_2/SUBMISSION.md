@@ -49,6 +49,8 @@ All models run locally on CPU and are open source (scikit-learn, pandas). No ext
 
 (Cut-off order of the ranges: 1 Feb 2026 / 1 Oct 2025 / 1 Jul 2025.)
 
+**Comparison rules:** *naive* = last known mileage. *Best rule* = last known mileage + class rate × days since the last reading, where the class rate is the median km/day of the vehicles of the same class (Standard, Intermediate, Full Size) over the 90 days before the cut-off date.
+
 ## Results
 All numbers on **held-out vehicles** (15 % of the sample vehicles, never used for training or tuning), 133 days after the cut-off date, training only on targets that end before the cut-off. Evaluation tables: `results/`. Feature importance: `reports/figures/forecast_feature_importance.png`.
 
