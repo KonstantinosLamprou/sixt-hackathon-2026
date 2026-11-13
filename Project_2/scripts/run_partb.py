@@ -21,13 +21,13 @@ def injection_test(d, level, seg_rate, thr, n=6000, seed=0):
     d = d.reset_index(drop=True)
     first = d.groupby("vhcl_anon_id").cumcount() == 0
     pos = rng.choice(d.index[~first & (d.km > 2000)], size=n, replace=False)
-    kinds = np.array(["zehnfach", "zehntel", "null", "plus_5k_30k", "minus_20_60pct", "minus_10k_30k"])
+    kinds = np.array(["x10", "div10", "zero", "plus_5k_30k", "minus_20_60pct", "minus_10k_30k"])
     kind = kinds[rng.integers(len(kinds), size=n)]
     inj = d.copy()
     km = inj.km.values.astype(float)
     for p, k in zip(pos, kind):
         v = km[p]
-        km[p] = {"zehnfach": v * 10, "zehntel": v // 10, "null": 0, "plus_5k_30k": v + rng.integers(5000, 30000),
+        km[p] = {"x10": v * 10, "div10": v // 10, "zero": 0, "plus_5k_30k": v + rng.integers(5000, 30000),
                  "minus_20_60pct": v * rng.uniform(0.4, 0.8), "minus_10k_30k": max(v - rng.integers(10000, 30000), 0)}[k]
     inj["km"] = km
     res = an.detect(inj, level, seg_rate, thr)
@@ -35,9 +35,9 @@ def injection_test(d, level, seg_rate, thr, n=6000, seed=0):
     near = set(pos) | set(pos + 1)                       # Nachbarmessung zaehlt als Begleitschaden, nicht als Fehlalarm
     mask = np.array([i not in near for i in range(len(res))])
     fp = res.loc[mask, "flag"].mean()
-    out = pd.DataFrame({"fehlerart": kind, "erkannt": hit}).groupby("fehlerart").erkannt.agg(["size", "mean"]).rename(
+    out = pd.DataFrame({"error_type": kind, "detected": hit}).groupby("error_type").detected.agg(["size", "mean"]).rename(
         columns={"size": "n", "mean": "recall"})
-    out.loc["ALLE"] = [n, hit.mean()]
+    out.loc["ALL"] = [n, hit.mean()]
     return out, fp
 
 

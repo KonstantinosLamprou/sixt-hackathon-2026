@@ -91,7 +91,7 @@ def main():
         res.insert(0, "cutoff", E)
         out.append(res)
         print(f"Bewertung auf {t.vhcl_anon_id.nunique()} Holdout-Fahrzeugen, {len(t)} Zielmessungen")
-        show = res[res.horizon.isin(["alle", "0-14", "31-60", "91-10000"]) & res.model.isin(["b_last", "b_segment", "b_rate_all", "m_gboost"])]
+        show = res[res.horizon.isin(["all", "0-14", "31-60", "91-10000"]) & res.model.isin(["b_last", "b_segment", "b_rate_all", "m_gboost"])]
         print(show.round(1).to_string(index=False))
 
     results = RESULTS

@@ -20,6 +20,6 @@ def by_horizon(frame: pd.DataFrame, pred_cols, y_col="km", h_col="horizon", buck
         for lo, hi in [(0, 10_000)] + (buckets or BUCKETS):
             s = sub[(sub[h_col] >= lo) & (sub[h_col] <= hi)]
             if len(s):
-                rows.append({"model": name, "horizon": "alle" if hi == 10_000 and lo == 0 else f"{lo}-{hi}",
+                rows.append({"model": name, "horizon": "all" if hi == 10_000 and lo == 0 else f"{lo}-{hi}",
                              **summarize(s[y_col], s[name])})
     return pd.DataFrame(rows)

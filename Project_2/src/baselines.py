@@ -78,7 +78,7 @@ def main():
         res = by_horizon(t, preds)
         res.insert(0, "cutoff", c)
         out.append(res)
-        print(res[res.horizon.isin(["alle", "0-14", "31-60", "91-10000"])].round(1).to_string(index=False))
+        print(res[res.horizon.isin(["all", "0-14", "31-60", "91-10000"])].round(1).to_string(index=False))
     results = RESULTS
     results.mkdir(exist_ok=True)
     pd.concat(out).to_csv(results / "baseline_metrics.csv", index=False)

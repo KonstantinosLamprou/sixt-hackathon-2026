@@ -1,4 +1,4 @@
-"""Datenueberblick fuer Project 2. Usage (aus Project_2/): python -m experiments.explore_data  -> schreibt data_overview.txt"""
+"""Datenueberblick fuer Project 2. Usage (aus Project_2/): python -m scripts.run_explore  -> schreibt data_overview.txt"""
 import io
 from pathlib import Path
 

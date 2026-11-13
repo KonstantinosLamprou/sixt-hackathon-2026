@@ -109,15 +109,15 @@ def detect(d: pd.DataFrame, level: pd.Series, seg_rate: dict, thr: dict) -> pd.D
 def _reason(r) -> str:
     out = []
     if r.f_rollback:
-        out.append(f"Stand {r.km:.0f} km liegt unter dem Stand davor ({r.lo:.0f} km)")
+        out.append(f"Reading {r.km:.0f} km is below the previous reading ({r.lo:.0f} km)")
     if r.f_toohigh:
-        out.append(f"Stand {r.km:.0f} km liegt ueber allen spaeteren Messungen ({r.hi:.0f} km)")
+        out.append(f"Reading {r.km:.0f} km is above all later readings ({r.hi:.0f} km)")
     if r.f_speed:
-        out.append(f"mehr als {MAX_KM_PER_DAY} km/Tag (Zuwachs {r.dkm:.0f} km in {r.dd:.0f} Tagen)")
+        out.append(f"more than {MAX_KM_PER_DAY} km/day (increase of {r.dkm:.0f} km in {r.dd:.0f} days)")
     if r.f_high:
-        out.append(f"Zuwachs {r.dkm:.0f} km in {r.dd:.0f} Tagen, erwartet ca. {r.ref * r.dd:.0f} km")
+        out.append(f"increase of {r.dkm:.0f} km in {r.dd:.0f} days, expected about {r.ref * r.dd:.0f} km")
     if r.f_low:
-        out.append(f"Zuwachs nur {r.dkm:.0f} km in {r.dd:.0f} Tagen, erwartet ca. {r.ref * r.dd:.0f} km")
+        out.append(f"increase of only {r.dkm:.0f} km in {r.dd:.0f} days, expected about {r.ref * r.dd:.0f} km")
     return "; ".join(out)
 
 

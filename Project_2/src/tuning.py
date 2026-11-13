@@ -162,7 +162,7 @@ def main():
         res.insert(0, "cutoff", E)
         out.append(res)
         print(f"\n=== Holdout, Stichtag {E}: {t.vhcl_anon_id.nunique()} Fahrzeuge, {len(t)} Zeilen ===")
-        print(res[res.horizon == "alle"].round(1).to_string(index=False), flush=True)
+        print(res[res.horizon == "all"].round(1).to_string(index=False), flush=True)
         if E == FINAL_CUTOFFS[-1]:
             joblib.dump({"model": m_tuned, "alpha": alpha, "columns": list(Xtr.columns), "cfg": cfg},
                         MODELS / f"forecast_tuned_{E}.joblib", compress=3)
