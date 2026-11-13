@@ -44,6 +44,8 @@ Alle Zahlen auf **zurückgehaltenen Fahrzeugen** (15 % der Sample-Fahrzeuge, nie
 
 - **Nowcast** (Horizont bis 28 Tage, mit Status): MAE 590 bis 666 km gegen 677 bis 757 km der besten Regel (10 bis 13 % besser).
 - **Teil B:** Auf der Testdatei 5.338 von 493.554 Zeilen mit gemeldetem Stand geflaggt (1,08 %). Bei 6.000 eingespritzten Fehlern (Verzehnfachung, Zehntel, Null, ±Beträge) Recall 99,3 %.
+  Von den 5.338 Flags stammen 2.781 nur aus den Regeln, 2.257 nur aus der Abweichungsprüfung und 300 aus beiden. Die beiden Ansätze finden also großteils Verschiedenes; ob die reine Abweichungsprüfung auch Rauschen enthält, lässt sich ohne Labels nicht sagen.
+- **Plausibilitätscheck der Vorhersage** (keine Bewertung, die wahren Werte kennen wir nicht): Für Fahrzeuge mit mindestens 30 Tagen Abstand zur letzten Messung liegt die vorhergesagte Rate im Median bei 73 km/Tag, die tatsächliche Rate derselben Fahrzeuge im April bis Juni 2026 bei 74 km/Tag.
 
 **Was nicht funktioniert hat / Grenzen (ehrlich):**
 - Das Tuning bringt nur 1,1 % gegenüber der ungetunten Konfiguration. Das Modell besteht im Kern aus „Klassen-Rate × Abstand".
@@ -51,7 +53,7 @@ Alle Zahlen auf **zurückgehaltenen Fahrzeugen** (15 % der Sample-Fahrzeuge, nie
 - Der Holdout ist ein Zufallsschnitt; die Streuung zwischen Holdouts ist spürbar (Vorsprung beim Juli-Stichtag war auf einem anderen Holdout 2,7 %).
 - Die Bereinigung wurde einmal über die gesamte Zeitreihe gerechnet, das ist eine kleine Lücke im Pseudo-Test. Die Zielstände sind bereinigt, die echte Wahrheit vermutlich roh. Die Zahlen sind daher eher optimistisch.
 - Das Endmodell für die Testdatei wurde auf Sample **und** bekannter Testhistorie trainiert und nicht separat validiert. Die isotone Glättung wurde nicht auf dem Holdout gemessen.
-- Teil B: Die eingespritzten Fehler sind groß und auffällig. Für subtile Manipulationen ist die Erkennung nicht belegt. Die Fehlalarmrate von 1,85 % auf nicht verfälschten Meldungen enthält auch echte natürliche Auffälligkeiten; ohne Labels wissen wir nicht, wie viele falsch gemeldet sind. Der Erwartungswert kommt aus einer einfachen Rate, nicht aus dem Nowcast-Modell.
+- Teil B: Die eingespritzten Fehler sind groß und auffällig. Für subtile Manipulationen ist die Erkennung nicht belegt. Die Fehlalarmrate von 1,85 % auf nicht verfälschten Meldungen enthält auch echte natürliche Auffälligkeiten; ohne Labels wissen wir nicht, wie viele falsch gemeldet sind. Der Erwartungswert kommt aus einer einfachen Rate (Fahrzeug- bzw. Klassenmedian), nicht aus dem trainierten Prädiktor, wie ihn die Aufgabenstellung für den Abweichungs-Ansatz vorsieht.
 
 ## So läuft es
 Python 3.11+, aus einer frischen Kopie. Die Rohdaten (`data_30_percent_sample.parquet`, `test_data.parquet`) liegen in `Project_2/data/`. Keine Umgebungsvariablen nötig.

@@ -21,6 +21,22 @@ Gegenüber dem ursprünglichen Vorschlag wurden bewusst geändert: Rückwärts-T
 - Sample: 1,85 % der Meldungen geflaggt, Testdatei: 1,53 % der Meldungen, **5.338 von 493.554 Zeilen (1,08 %)** mit gemeldetem Stand.
 - **Prüfung mit eingespritzten Fehlern** (6.000 Meldungen im Sample verfälscht: Verzehnfachung, Zehntel, Null, +5.000 bis 30.000 km, −20 bis −60 %, −10.000 bis −30.000 km): **Recall 99,3 %** (Spanne je Art 97,0 bis 100 %).
 
+## Einordnung gegenüber der Aufgabenstellung
+Die README nennt für Teil B **zwei brauchbare Ansätze, die sich ergänzen sollen** (Abweichung vom Prädiktor; physikalisch unmögliche Fälle als schwache Labels zur Plausibilisierung). Beide sind enthalten, aber unterschiedlich weit umgesetzt:
+
+- **Regelbasiert:** voll umgesetzt (`f_rollback`, `f_toohigh`, `f_speed`).
+- **Abweichungsbasiert:** nur teilweise. Die README sieht vor, den **trainierten Prädiktor** zu nutzen und Meldungen zu flaggen, die davon abweichen. Wir vergleichen stattdessen mit einer **einfachen Rate** (Median des Fahrzeugs bzw. der Fahrzeugklasse mal Tage). Das ist eine abgespeckte Variante, entstanden aus Zeitgründen.
+
+**Überschneidung der beiden Ansätze** (5.338 geflaggte Testzeilen):
+
+| | Zeilen |
+|---|---|
+| nur durch Regeln geflaggt | 2.781 |
+| nur durch Abweichung geflaggt | 2.257 |
+| von beiden geflaggt | 300 |
+
+Nur etwa 10 % der Regel-Flags löst auch die Abweichungsprüfung aus. Das kann bedeuten, dass die Ansätze **verschiedene Fehlerarten** finden (ergänzen sich), oder dass die Abweichungsprüfung viel Rauschen enthält. Ohne Labels lässt sich das nicht unterscheiden; hier wäre der trainierte Erwartungswert (Nowcast) der nächste Schritt.
+
 ## Einschränkungen (wichtig)
 - Die eingespritzten Fehler sind **groß und auffällig**. Subtile Manipulationen (wenige Prozent, wenige hundert km) sind damit nicht geprüft; dort ist die Erkennung deutlich schlechter zu erwarten.
 - Die Fehlalarmrate von 1,85 % auf nicht verfälschten Meldungen enthält auch **echte natürliche Auffälligkeiten**; wir haben keine Labels und wissen nicht, wie viele davon wirklich falsch gemeldet sind.
