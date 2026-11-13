@@ -54,7 +54,9 @@ def main():
     best_rule_gain = (1 - allh["m_tuned"] / allh["b_segment"]) * 100
     nc_gain = (1 - ncall["m_nc_status"] / ncall["b_segment"]) * 100
     rec = inj.set_index(inj.columns[0])["recall"]
-    flagged = int(round(summ.loc[summ.iloc[:, 0] == "flag", "test_%"].iloc[0] / 100 * 493554)) if summ is not None else 5338
+    fl_path = ROOT / "data" / "processed" / "partb_flagged_rows.csv"
+    flagged = len(pd.read_csv(fl_path, usecols=[0])) if fl_path.exists() else 5338
+    flag_pct = 100 * flagged / 493554
 
     pdf = PdfPages(ROOT / "submission" / "slides.pdf")
 
@@ -66,10 +68,10 @@ def main():
         tile(f, 0.05, 0.50, 0.28, 0.27, f"{b[mdl]:,.0f} km", "Forecast MAE, 133 days",
              f"backtest on the real test fleet\nvs {b['b_segment']:,.0f} km best rule, {b['b_last']:,.0f} km naive")
     else:
-        tile(f, 0.05, 0.50, 0.28, 0.27, f"{allh['m_tuned'].mean():,.0f} km", "Forecast MAE, 133 days", "held-out vehicles, 3 cut-off dates")
+        tile(f, 0.05, 0.50, 0.28, 0.27, f"{allh['m_tuned'].mean():,.0f} km", "Forecast MAE, 133 days", "mean over 3 cut-off dates,\nheld-out vehicles")
     tile(f, 0.36, 0.50, 0.28, 0.27, f"{ncall['m_nc_status'].min():,.0f}-{ncall['m_nc_status'].max():,.0f} km", "Nowcast MAE, up to 28 days",
          f"{nc_gain.min():.0f}-{nc_gain.max():.0f}% better than the best rule", color=GOOD)
-    tile(f, 0.67, 0.50, 0.28, 0.27, f"{rec['ALL'] * 100:.1f}%", "Recall on injected errors", f"{flagged:,} of 493,554 reports flagged (1.1%)", color=GOOD)
+    tile(f, 0.67, 0.50, 0.28, 0.27, f"{rec['ALL'] * 100:.1f}%", "Recall on injected errors", f"{flagged:,} of 493,554 reports flagged ({flag_pct:.1f}%)", color=GOOD)
     tile(f, 0.05, 0.19, 0.28, 0.25, "163,047", "forecast rows filled", "159,302 model + 3,745 cold start\n(149 new cars without history)", color=INK)
     tile(f, 0.36, 0.19, 0.28, 0.25, "0 / 1", "error flag per reported mileage", "rule violations + deviation from\nexpected usage, with score and reason", color=INK)
     tile(f, 0.67, 0.19, 0.28, 0.25, "1 file", "submission/predictions.parquet", "same row order as test_data.parquet,\nkey: row_id", color=INK)
@@ -127,14 +129,14 @@ def main():
 
     # ---- 4 anomaly flags --------------------------------------------------------------------------------------------------
     f = page("Erroneous-report flags", "A report is flagged when it breaks physics or deviates strongly from expected usage")
-    ax = f.add_axes([0.07, 0.14, 0.42, 0.58])
+    ax = f.add_axes([0.24, 0.19, 0.25, 0.53])
     order = [k for k in rec.index if k != "ALL"]
     vals = [rec[k] * 100 for k in order]
     names = {"x10": "digit appended (x10)", "div10": "digit dropped (/10)", "zero": "reset to 0", "plus_5k_30k": "+5,000 to +30,000 km",
              "minus_20_60pct": "-20% to -60%", "minus_10k_30k": "-10,000 to -30,000 km"}
     bars = ax.barh([names.get(k, k) for k in order][::-1], vals[::-1], color=GOOD)
     ax.bar_label(bars, labels=[f"{v:.1f}%" for v in vals[::-1]], fontsize=10.5, padding=3)
-    ax.set_xlim(90, 102); ax.set_xlabel("recall on 6,000 injected errors (%)")
+    ax.set_xlim(90, 102); ax.set_xlabel("recall on 6,000 injected errors (%)", fontsize=10)
     ax.set_title(f"Detected: {rec['ALL'] * 100:.1f}% overall", fontsize=12.5, color=INK, loc="left")
     f.text(0.55, 0.74, "Five flags, combined with OR", fontsize=14, fontweight="bold", color=INK)
     bullets(f, 0.55, 0.69, ["rollback: reading below the previous one (longest",
@@ -144,10 +146,10 @@ def main():
                             "high / low: increase far above or below the expected",
                             "   usage for that time gap (quantile bands per gap)"], size=11.5, gap=0.042)
     f.text(0.55, 0.40, "On the test file", fontsize=14, fontweight="bold", color=INK)
-    bullets(f, 0.55, 0.355, [f"{flagged:,} of 493,554 reports flagged (1.1%)",
+    bullets(f, 0.55, 0.355, [f"{flagged:,} of 493,554 reports flagged ({flag_pct:.1f}%)",
                              "2,781 by rules only, 2,257 by deviation only, 300 by both",
                              "every flag has a score and a plain-text reason"], size=11.5, gap=0.042)
-    f.text(0.05, 0.075, "Injected errors are large; subtle manipulation is not covered by this test. No ground-truth labels exist.", fontsize=10.5, color=MUTED)
+    f.text(0.05, 0.05, "Injected errors are large; subtle manipulation is not covered by this test. No ground-truth labels exist.", fontsize=10.5, color=MUTED)
     pdf.savefig(f); plt.close(f)
 
     # ---- 5 deliverables and limits ----------------------------------------------------------------------------------------
@@ -157,18 +159,18 @@ def main():
                              "models/: final forecast model and nowcast model (joblib)",
                              "results/: all evaluation tables; reports/figures/: feature importance",
                              "src/ + scripts/: full pipeline, run with python -m scripts.run_<step>",
-                             "SUBMISSION.md: approach, results, how to run"], size=11.5, gap=0.042)
-    f.text(0.05, 0.47, "Known limits", fontsize=14, fontweight="bold", color=INK)
-    bullets(f, 0.05, 0.425, ["Model underestimates in the summer cut-off (bias -516 km): no seasonal feature yet",
+                             "SUBMISSION.md: approach, results, how to run"], size=13, gap=0.052)
+    f.text(0.05, 0.43, "Known limits", fontsize=14, fontweight="bold", color=INK)
+    bullets(f, 0.05, 0.385, ["Model underestimates in the summer cut-off (bias -516 km): no seasonal feature yet",
                              "Gain over the best rule varies by holdout and date: 5% to 12%",
                              "Error flags use a simple expected rate, not the trained model; no labels to verify precision",
-                             "Nowcast is not filled per test row (empty test rows have no rental status)"], size=11.5, gap=0.042)
+                             "Nowcast is not filled per test row (empty test rows have no rental status)"], size=13, gap=0.052)
     f.text(0.55, 0.78, "Next steps", fontsize=14, fontweight="bold", color=INK)
     bullets(f, 0.55, 0.735, ["Seasonal index and fleet trend as forecast features",
                              "Out-of-fold nowcast as expected value for the flags,",
                              "   with quantile uncertainty bands",
                              "Cross-validation over vehicles",
-                             "Checks with subtle manipulation (a few percent)"], size=11.5, gap=0.042)
+                             "Checks with subtle manipulation (a few percent)"], size=13, gap=0.052)
     pdf.savefig(f); plt.close(f)
     pdf.close()
     print("saved submission/slides.pdf")

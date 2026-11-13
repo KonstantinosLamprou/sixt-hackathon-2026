@@ -21,7 +21,7 @@ Das Tuning bringt wenig. Die Einstellungen sind nicht der Engpass.
 ## Holdout (MAE in km, 133 Tage Horizont)
 | Stichtag | Stand bleibt | beste Regel `b_segment` | Modell ungetunt | **Modell getunt** | getunt gegen `b_segment` |
 |---|---|---|---|---|---|
-| 01.07.2025 (gleiche Jahreszeit wie der echte Test) | 5.418 | 1.618 | 1.547 | **1.536** | 5,1 % besser |
+| 01.07.2025 (gleiche Jahreszeit wie der echte Test) | 5.418 | 1.618 | 1.547 | **1.536** | 5,0 % besser |
 | 01.10.2025 | 4.751 | 1.521 | 1.362 | **1.342** | 11,8 % besser |
 | 01.02.2026 | 4.659 | 1.489 | 1.350 | **1.340** | 10,0 % besser |
 
@@ -34,6 +34,6 @@ Das Tuning bringt wenig. Die Einstellungen sind nicht der Engpass.
 Das Modell beruht im Wesentlichen auf "Segment-Rate mal Abstand" und korrigiert nur wenig. Fahrzeugmerkmale tragen kaum etwas bei. Weitere Verbesserung ist deshalb von **neuen Informationsquellen** zu erwarten (Saison, Flottentrend, Filiale, Restkilometer), nicht von mehr Tuning.
 
 ## Einschränkungen
-- Die Zahlen gelten für einen anderen Holdout als die früheren Tabellen (15 % statt 20 % der Fahrzeuge, anderer Zufallsschnitt). Beim Stichtag 01.07.2025 beträgt der Vorsprung auf `b_segment` hier 5,1 % statt der früheren 2,7 %. Die Streuung zwischen Holdouts ist also nicht klein.
+- Die Zahlen gelten für einen anderen Holdout als die früheren Tabellen (15 % statt 20 % der Fahrzeuge, anderer Zufallsschnitt). Beim Stichtag 01.07.2025 beträgt der Vorsprung auf `b_segment` hier 5,0 % statt der früheren 2,7 %. Die Streuung zwischen Holdouts ist also nicht klein.
 - Ein Holdout, ein Zufallssplit. Eine Kreuzvalidierung wäre belastbarer.
 - Frühere Version der Parameterdatei enthielt fälschlich den MAE der verworfenen Zusatz-Features unter `val_mae_tuned`; behoben.
