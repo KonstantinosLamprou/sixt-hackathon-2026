@@ -1,7 +1,7 @@
 # Submission: Project 2 – Mileage Forecasting & Erroneous Mileage Detection
 
 ## Authors
-**Team name:** <enter team name> (single-person team)
+**Team name:** Lakers (single-person team)
 
 **Project:** Project 2: Mileage Forecasting & Erroneous Mileage Detection
 
