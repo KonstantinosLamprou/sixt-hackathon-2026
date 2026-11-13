@@ -94,20 +94,20 @@ Python 3.11+ and about 12 GB RAM; run from `Project_2/`. The raw files `data_30_
 ```bash
 cd Project_2
 ./run.sh setup        # once: create .venv and install requirements
-./run.sh submission   # rebuild all submission files from the saved parameters (about 2.5 min)
-./run.sh all          # everything incl. tuning and all evaluations (about 45 min)
+./run.sh submission   # rebuild all submission files from the saved parameters (about 2 min 10 s)
+./run.sh all          # everything incl. tuning and all evaluations (about 40 min)
 ./run.sh partb predict export slides   # or single steps, in any order
 ```
 
 | Step | What it does / output | Time |
 |---|---|---|
 | `setup` | virtual environment and packages | about 1 min |
-| `explore` | data overview → `data_overview.txt` (not tracked) | about 1 min (estimate) |
-| `baselines` | rule baselines → `results/baseline_metrics.csv` | about 8 s (measured) |
-| `coldstart` | new-car rule vs fleet rate → `results/coldstart_metrics.csv` | under 1 min (estimate) |
+| `explore` | data overview → `data_overview.txt` (not tracked) | 21 s (measured) |
+| `baselines` | rule baselines → `results/baseline_metrics.csv` | 8 s (measured) |
+| `coldstart` | new-car rule vs fleet rate → `results/coldstart_metrics.csv` | 13 s (measured) |
 | `nowcast` | nowcast with and without status → `results/nowcast_metrics.csv` | about 6 min (measured) |
 | `tuning` | random search, bias, holdout, feature importance → `results/`, `reports/figures/` | about 25 min (measured) |
-| `save_nowcast` | train and save the nowcast model → `models/nowcast_status_2026-07-01.joblib` | about 3 min (estimate) |
+| `save_nowcast` | train and save the nowcast model → `models/nowcast_status_2026-07-01.joblib` | 2 min 25 s (measured) |
 | `backtest` | backtest on the test fleet → `results/backtest_test_fleet.csv` | about 5 min (estimate) |
 | `partb` | thresholds, injected-error test, flags → `results/partb_*.csv`, `data/processed/partb_flagged_rows.csv` | 19 s (measured) |
 | `predict` | train the final forecast model, predict the empty test rows → `submission/predictions_forecast.csv`, `models/forecast_final_2026-07-01.joblib` | 1 min 49 s (measured) |
