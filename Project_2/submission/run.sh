@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Single entry point for the whole pipeline.   Usage:  ./run.sh <command> [<command> ...]
+# Single entry point for the whole pipeline.   Usage:  ./submission/run.sh <command> [<command> ...]
 #
-#   ./run.sh setup        create .venv and install requirements
-#   ./run.sh submission   rebuild the submission files from the saved parameters (about 2 min)
-#   ./run.sh all          everything, including tuning and all evaluations (about 40 min)
-#   ./run.sh <step> ...   single steps, in any order:
+#   ./submission/run.sh setup        create .venv and install requirements
+#   ./submission/run.sh submission   rebuild the submission files from the saved parameters (about 2 min)
+#   ./submission/run.sh all          everything, including tuning and all evaluations (about 40 min)
+#   ./submission/run.sh <step> ...   single steps, in any order:
 #       explore  baselines  coldstart  nowcast  tuning  save_nowcast  backtest  partb  predict  export  slides
 set -euo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")"
+cd "$(dirname "${BASH_SOURCE[0]}")/.."   # project root (Project_2), this script lives in Project_2/submission/
 
 PY="${PYTHON:-python3}"
 [ -d .venv ] && PY=".venv/bin/python"

@@ -12,7 +12,7 @@
 - `forecast_mileage` for all **163,047** empty rows (2 Jul – 11 Nov 2026): 159,302 by the model, 3,745 by a cold-start rule for 149 new cars without any history.
 - `mileage_error_flag` (0/1) with `flag_score` and `flag_reason` for all **493,554** reported readings: **5,338 flagged (1.08 %)**.
 
-Column reference: [`submission/README.md`](submission/README.md). Five slides: [`submission/slides.pdf`](submission/slides.pdf).
+Column reference: [`README.md`](README.md). Five slides: [`slides.pdf`](slides.pdf).
 
 | Deliverable | Result |
 |---|---|
@@ -95,10 +95,10 @@ Python 3.11+ and about 12 GB RAM; run from `Project_2/`. The raw files `data_30_
 
 ```bash
 cd Project_2
-./run.sh setup        # once: create .venv and install requirements
-./run.sh submission   # rebuild all submission files from the saved parameters (about 2 min 10 s)
-./run.sh all          # everything incl. tuning and all evaluations (about 40 min, sum of the steps below)
-./run.sh partb predict export slides   # or single steps, in any order
+./submission/run.sh setup        # once: create .venv and install requirements
+./submission/run.sh submission   # rebuild all submission files from the saved parameters (about 2 min 10 s)
+./submission/run.sh all          # everything incl. tuning and all evaluations (about 40 min, sum of the steps below)
+./submission/run.sh partb predict export slides   # or single steps, in any order
 ```
 
 | Step | What it does / output | Time |
@@ -119,7 +119,7 @@ cd Project_2
 Times were measured on 4 CPU cores and 16 GB RAM, one step at a time; "estimate" marks a step that was not timed on its own. `submission` runs `partb`, `predict`, `export`, `slides` in that order. The old per-step commands still work, e.g. `python -m scripts.run_partb`.
 
 ## Demo
-`submission/slides.pdf` (5 slides, English). Open it with any PDF viewer, for example `xdg-open submission/slides.pdf` on Linux, or directly on GitHub. `./run.sh slides` rebuilds it from the result tables.
+`submission/slides.pdf` (5 slides, English). Open it with any PDF viewer, for example `xdg-open submission/slides.pdf` on Linux, or directly on GitHub. `./submission/run.sh slides` rebuilds it from the result tables.
 
 ## Next steps
 - Seasonal index, fleet trend, remaining kilometres to the contract limit and branch features for the forecast (the feature importance shows that almost only "rate × gap" counts today).

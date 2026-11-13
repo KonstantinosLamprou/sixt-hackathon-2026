@@ -25,6 +25,6 @@ There is **no per-row nowcast** in this file: the empty test rows have no rental
 
 ## Reproduce
 ```bash
-./run.sh submission    # from Project_2/: error flags, forecast, merged file, slides
+./submission/run.sh submission    # from Project_2/: error flags, forecast, merged file, slides
 ```
-Details and results: `../SUBMISSION.md`.
+Details and results: `SUBMISSION.md`.
