@@ -1,81 +1,126 @@
 # Submission: Project 2 – Mileage Forecasting & Erroneous Mileage Detection
 
 ## Authors
-**Team name:** <Teamname eintragen>
+**Team name:** <enter team name> (single-person team)
 
-**Project:** Project 2: Mileage Forecasting & Erroneous Mileage Detection (Einzelteam)
+**Project:** Project 2: Mileage Forecasting & Erroneous Mileage Detection
 
-## Problem und Ansatz
-Für Langzeitmieten liegt der Kilometerstand oft erst verzögert vor. Wir sagen den Stand für die leeren Zeilen von `test_data.parquet` voraus (Teil A) und markieren auffällige gemeldete Stände (Teil B).
+## Summary: what we deliver
 
-**Was die Testdatei verlangt (aus den Daten belegt):** 163.047 Zeilen (24,8 %) ohne Kilometerstand, alle zwischen 02.07. und 11.11.2026 (133 Tage), ohne Mietstatus. Die Historie reicht bis 01.07.2026. Die Testfahrzeuge kommen im Sample nicht vor. Die Aufgabe ist also ein **Forecast über 133 Tage** auf neuen Fahrzeugen.
+**One table, `submission/predictions.parquet`**, with one row per row of `test_data.parquet` (656,601 rows, same order, key `row_id`):
 
-**Teil A, Forecast (`src/forecast.py`, `src/tuning.py`, `src/predict.py`):** Gradient Boosting auf dem Kilometer-Zuwachs seit der letzten bekannten Messung (Ziel: `km − letzter Stand`, mindestens 0, Verlust: absoluter Fehler). Features: Abstand in Tagen, Fahrzeugraten (30/90/180 Tage, gesamte Historie), erwarteter Zuwachs der Baselines, Fahrzeugmerkmale, Monat. Vorhersagen werden pro Fahrzeug über die Zeit monoton gemacht (isotone Regression).
-**Neufahrzeuge ohne Historie (149 Fahrzeuge, 2,3 % der Zeilen):** Alterskurve (Startstand ca. 12 km plus mediane Wachstumskurve neuer Fahrzeuge) (`src/coldstart.py`).
-**Teil A, Nowcast (`src/nowcast.py`):** Stand an einem Tag ohne Meldung (bis 28 Tage) aus letztem Stand und Mietstatus des Tages. Die Kette Nowcast → Forecast brachte keinen Gewinn und ist nicht Teil der Abgabe.
-**Teil B (`src/anomaly.py`):** Fünf Flags: Rückwärts-Tacho (längste nicht fallende Teilfolge), zu hoch gegenüber späteren Messungen, mehr als 1.500 km/Tag, Zuwachs deutlich über oder unter dem Erwartbaren je Zeitabstand. Schwellen aus dem Sample.
+- `forecast_mileage` for all **163,047** empty rows (2 Jul – 11 Nov 2026): 159,302 by the model, 3,745 by a cold-start rule for 149 new cars without any history.
+- `mileage_error_flag` (0/1) with `flag_score` and `flag_reason` for all **493,554** reported readings: **5,338 flagged (1.08 %)**.
 
-**Annahmen:** Pro Fahrzeug und Tag zählt der höchste gemeldete Stand. Ausreißer über 10.000 km Abweichung vom lokalen Median werden für die Modellierung ignoriert. Das Abgabeformat ist nicht bestätigt; wir liefern `submission/predictions_forecast.csv` (Fahrzeug, Datum, Vorhersage, Methode) und `data/processed/partb_flagged_rows.csv`.
+Column reference: [`submission/README.md`](submission/README.md). Five slides: [`submission/slides.pdf`](submission/slides.pdf).
 
-Entscheidungen und Begründungen: `review/ENTSCHEIDUNGEN.md`, `review/FORECAST_TUNING.md`, `review/NOWCAST.md`, `review/CHAIN.md`, `review/COLDSTART.md`, `review/TEIL_B.md`.
+| Deliverable | Result |
+|---|---|
+| **Forecast**, 133 days ahead, backtest on the real test fleet (4,224 vehicles, forecast from 18 Feb 2026, compared with the readings known until 1 Jul 2026) | **MAE 1,396 km** vs 1,549 km best rule baseline (9.9 % better) and 5,053 km naive last-value baseline (72 % better) |
+| Forecast, held-out vehicles, 3 cut-off dates | MAE 1,340 – 1,536 km; 5.0 – 11.8 % better than the best rule baseline |
+| **Nowcast**, up to 28 days, with rental status | MAE 590 – 666 km vs 677 – 757 km best rule baseline (10 – 13 % better) |
+| New cars without history (149 in the test file) | cold-start age curve, MAE 961 – 1,255 km vs 1,091 – 1,312 km for the fleet-rate rule |
+| **Error flags** | 5,338 of 493,554 reports flagged; recall 99.3 % on 6,000 injected errors (97.0 – 100 % per error type) |
 
-## Modelle und warum
-Alles läuft lokal auf CPU, alle Verfahren sind Open Source (scikit-learn, pandas). Kein externes Modell, kein API-Schlüssel.
+No ground truth exists for the hidden test period (2 Jul – 11 Nov 2026), so all accuracy numbers come from vehicles and periods held out from training and tuning, not from the hidden period itself.
 
-| Modell | Open/Closed | Läuft wo | Hauptmetrik (Holdout, MAE km, 133 Tage) | Zeit | Gewählt? |
+## Problem and approach
+The test file contains 163,047 rows without a mileage (all between 2 Jul and 11 Nov 2026, no rental status), history until 1 Jul 2026, and vehicles that do not appear in the sample. This is a **133-day forecast on unseen vehicles**; the nowcast and the error flags are covered as separate parts.
+
+- **Forecast** (`src/forecast.py`, `src/tuning.py`, `src/predict.py`): gradient boosting on the mileage increment since the last known reading (target `km − last km`, at least 0, absolute-error loss). Features: gap in days, vehicle rates over 30/90/180 days and the full history, expected increments of the baselines, vehicle attributes, month. Predictions are made monotone per vehicle over time (isotonic regression).
+- **Cold start** (`src/coldstart.py`): for vehicles without any reading, start at a typical new-car reading (about 12 km) and follow the median growth curve of new vehicles by age in days.
+- **Nowcast** (`src/nowcast.py`): mileage on a day without report (up to 28 days after the last reading) from the last reading and the rental status of that day (rental running, product, one-way, days since handover, planned return, repair, planned utilisation).
+- **Error flags** (`src/anomaly.py`): five flags combined with OR: *rollback* (reading below the previous one; the longest non-decreasing subsequence marks the outlier itself), *too high* (above all later readings), *speed* (more than 1,500 km/day), *high* / *low* (increase far above or below the expected usage for that time gap; thresholds are quantiles per time gap, fitted on the sample). Every flag has a score and a plain-text reason.
+
+**Assumptions:** per vehicle and day the highest reported mileage counts; readings more than 10,000 km away from the local median are ignored for modelling; the planned return date is treated as known at the time of the row (it is never before the row date in the data).
+
+## Models and why
+All models run locally on CPU and are open source (scikit-learn, pandas). No external model and no API key.
+
+| Model | Open / closed | Runs where | Main metric (MAE km, held-out vehicles) | Time | Chosen? |
 |---|---|---|---|---|---|
-| Regel: Stand bleibt (`b_last`) | open | lokal | 4.659 bis 5.418 | Sekunden | nein, untere Latte |
-| Regel: Median-Rate der Fahrzeugklasse (`b_segment`) | open | lokal | 1.489 / 1.521 / 1.618 | Sekunden | Baseline |
-| Gradient Boosting, ungetunt | open | lokal | 1.350 / 1.362 / 1.547 | ca. 1 min | nein |
-| **Gradient Boosting, getunt** | open | lokal | **1.340 / 1.342 / 1.536** | ca. 2 min | **ja** |
-| Kette Nowcast → Forecast | open | lokal | gleich oder schlechter | ca. 3 min je Stichtag | nein |
-| Neufahrzeug-Alterskurve | open | lokal | 961 bis 1.255 (Regel: 1.091 bis 1.312) | Sekunden | ja, nur Neufahrzeuge |
+| Rule: last value stays (`b_last`) | open | local | 4,659 – 5,418 | seconds | no, lower bound |
+| Rule: class median rate × days (`b_segment`) | open | local | 1,489 – 1,618 | seconds | baseline |
+| Gradient boosting, untuned | open | local | 1,350 – 1,547 | about 1 min | no |
+| **Gradient boosting, tuned** | open | local | **1,340 – 1,536** | about 2 min | **yes** |
+| Tuned model + test-fleet history in training | open | local | 1,400 (backtest) vs 1,396 without | about 2 min | no, no gain |
+| Chain nowcast → forecast | open | local | equal or worse than forecast alone | about 3 min per cut-off | no |
+| New-car age curve | open | local | 961 – 1,255 (rule: 1,091 – 1,312) | seconds | yes, new cars only |
 
-(Reihenfolge der Zahlen: Stichtag 01.02.2026 / 01.10.2025 / 01.07.2025.)
+(Cut-off order of the ranges: 1 Feb 2026 / 1 Oct 2025 / 1 Jul 2025.)
 
-## Ergebnisse
-Alle Zahlen auf **zurückgehaltenen Fahrzeugen** (15 % der Sample-Fahrzeuge, nie im Training, nie zum Tuning benutzt), 133 Tage nach dem Stichtag, Training nur mit Daten bis 133 Tage vor dem Stichtag.
+## Results
+All numbers on **held-out vehicles** (15 % of the sample vehicles, never used for training or tuning), 133 days after the cut-off date, training only on targets that end before the cut-off. Evaluation tables: `results/`. Feature importance: `reports/figures/forecast_feature_importance.png`.
 
-| Stichtag | Stand bleibt | beste Regel | Modell getunt | Vorsprung auf beste Regel |
+**Forecast, held-out vehicles (MAE in km)**
+
+| Cut-off | Naive (last value) | Best rule | Model | Model vs best rule |
 |---|---|---|---|---|
-| 01.07.2025 (gleiche Jahreszeit wie der echte Test) | 5.418 | 1.618 | **1.536** | 5,1 % |
-| 01.10.2025 | 4.751 | 1.521 | **1.342** | 11,8 % |
-| 01.02.2026 | 4.659 | 1.489 | **1.340** | 10,0 % |
+| 1 Jul 2025 (same season as the test period) | 5,418 | 1,618 | **1,536** | 5.0 % |
+| 1 Oct 2025 | 4,751 | 1,521 | **1,342** | 11.8 % |
+| 1 Feb 2026 | 4,659 | 1,489 | **1,340** | 10.0 % |
 
-- **Nowcast** (Horizont bis 28 Tage, mit Status): MAE 590 bis 666 km gegen 677 bis 757 km der besten Regel (10 bis 13 % besser).
-- **Teil B:** Auf der Testdatei 5.338 von 493.554 Zeilen mit gemeldetem Stand geflaggt (1,08 %). Bei 6.000 eingespritzten Fehlern (Verzehnfachung, Zehntel, Null, ±Beträge) Recall 99,3 %.
-  Von den 5.338 Flags stammen 2.781 nur aus den Regeln, 2.257 nur aus der Abweichungsprüfung und 300 aus beiden. Die beiden Ansätze finden also großteils Verschiedenes; ob die reine Abweichungsprüfung auch Rauschen enthält, lässt sich ohne Labels nicht sagen.
-- **Plausibilitätscheck der Vorhersage** (keine Bewertung, die wahren Werte kennen wir nicht): Für Fahrzeuge mit mindestens 30 Tagen Abstand zur letzten Messung liegt die vorhergesagte Rate im Median bei 73 km/Tag, die tatsächliche Rate derselben Fahrzeuge im April bis Juni 2026 bei 74 km/Tag.
+**Forecast, backtest on the real test fleet** (4,224 test vehicles, 97,514 readings; forecast from 18 Feb 2026 = 133 days before the last known date, compared with the readings known until 1 Jul 2026; training on sample vehicles only):
 
-**Was nicht funktioniert hat / Grenzen (ehrlich):**
-- Das Tuning bringt nur 1,1 % gegenüber der ungetunten Konfiguration. Das Modell besteht im Kern aus „Klassen-Rate × Abstand".
-- Im saisonal passenden Stichtag (01.07.2025) schätzt das Modell deutlich zu niedrig (Bias −516 km). Ein Saison-Index wurde nicht mehr getestet.
-- Der Holdout ist ein Zufallsschnitt; die Streuung zwischen Holdouts ist spürbar (Vorsprung beim Juli-Stichtag war auf einem anderen Holdout 2,7 %).
-- Die Bereinigung wurde einmal über die gesamte Zeitreihe gerechnet, das ist eine kleine Lücke im Pseudo-Test. Die Zielstände sind bereinigt, die echte Wahrheit vermutlich roh. Die Zahlen sind daher eher optimistisch.
-- Das Endmodell für die Testdatei wurde auf Sample **und** bekannter Testhistorie trainiert und nicht separat validiert. Die isotone Glättung wurde nicht auf dem Holdout gemessen.
-- Teil B: Die eingespritzten Fehler sind groß und auffällig. Für subtile Manipulationen ist die Erkennung nicht belegt. Die Fehlalarmrate von 1,85 % auf nicht verfälschten Meldungen enthält auch echte natürliche Auffälligkeiten; ohne Labels wissen wir nicht, wie viele falsch gemeldet sind. Der Erwartungswert kommt aus einer einfachen Rate (Fahrzeug- bzw. Klassenmedian), nicht aus dem trainierten Prädiktor, wie ihn die Aufgabenstellung für den Abweichungs-Ansatz vorsieht.
+| Horizon | Naive | Best rule | Model |
+|---|---|---|---|
+| 0 – 14 days | 863 | 484 | **432** |
+| 31 – 60 days | 3,558 | 1,250 | **1,126** |
+| 91 – 133 days | 8,236 | 2,260 | **2,046** |
+| all | 5,053 | 1,549 | **1,396** (WAPE 6.8 %, bias −186 km) |
 
-## So läuft es
-Python 3.11+, aus einer frischen Kopie. Die Rohdaten (`data_30_percent_sample.parquet`, `test_data.parquet`) liegen in `Project_2/data/`. Keine Umgebungsvariablen nötig.
+**Nowcast (MAE in km, up to 28 days):**
+
+| Cut-off | Best rule | Model, history only | Model + rental status |
+|---|---|---|---|
+| 1 Jul 2025 | 757 | 711 | **666** |
+| 1 Oct 2025 | 707 | 668 | **636** |
+| 1 Feb 2026 | 677 | 609 | **590** |
+
+**Error flags:** 5,338 flagged reports: 2,781 by the rules only, 2,257 by the deviation check only, 300 by both. Injected-error test (6,000 readings changed): digit appended ×10 100 %, +5,000 to +30,000 km 99.9 %, reset to 0 99.8 %, −10,000 to −30,000 km 99.7 %, digit dropped ÷10 99.4 %, −20 % to −60 % 97.0 %; overall 99.3 %. Flagged rows with reasons: `data/processed/partb_flagged_rows.csv`.
+
+**What did not work / limits (honest):**
+- Tuning gains only 1.1 % over the untuned configuration (1,365 vs 1,380 km on validation). The model is essentially "class rate × time gap": the feature importance is dominated by `exp_segment` (518 km) and `gap` (501 km), everything else is below 50 km.
+- In the cut-off of the same season as the test period (1 Jul 2025) the model underestimates (bias −516 km) and its lead over the best rule is smallest (5.0 %). A seasonal feature was not tested.
+- The gain over the best rule varies with the holdout and the date (5 % to 12 %).
+- Adding the test fleet's own history to the training did not help (MAE 1,400 vs 1,396 km), so it is not used. Chaining the nowcast into the forecast gave no gain either.
+- The cleaning (outlier removal, monotone series) runs once over the whole time series, a small leak in the cut-off experiments; targets in the experiments are the cleaned readings, the hidden truth is probably raw, so the numbers are probably slightly optimistic.
+- Error flags: injected errors are large; subtle manipulation (a few percent) is not covered. The false-alarm rate on untouched readings is 1.85 %, which includes real natural oddities; without labels we cannot say how many are wrong reports. The expected value is a simple rate (vehicle or class median), not the trained model.
+- No nowcast is delivered per test row: the empty test rows have no rental status.
+
+## How to run
+Python 3.11+ and about 12 GB RAM; run from `Project_2/`. The raw files `data_30_percent_sample.parquet` and `test_data.parquet` are in `Project_2/data/`. No environment variables, no secrets.
 
 ```bash
 cd Project_2
-python3 -m venv .venv && . .venv/bin/activate
-pip install -r requirements.txt
-python -m scripts.run_baselines       # Baselines, ca. 10 s
-python -m scripts.run_tuning          # Forecast tunen + Holdout + Feature-Wichtigkeit, ca. 25 min
-python -m scripts.run_nowcast         # Nowcast, ca. 6 min
-python -m scripts.run_coldstart       # Neufahrzeug-Regel, ca. 1 min
-python -m scripts.run_partb           # Teil B inkl. Test mit eingespritzten Fehlern, ca. 20 s
-python -m scripts.run_predict_test    # Vorhersage fuer die Testdatei, ca. 2 min -> submission/predictions_forecast.csv
+./run.sh setup        # once: create .venv and install requirements
+./run.sh submission   # rebuild all submission files from the saved parameters (about 2.5 min)
+./run.sh all          # everything incl. tuning and all evaluations (about 45 min)
+./run.sh partb predict export slides   # or single steps, in any order
 ```
-Benötigt etwa 8 bis 12 GB RAM für die Läufe auf dem Sample.
+
+| Step | What it does / output | Time |
+|---|---|---|
+| `setup` | virtual environment and packages | about 1 min |
+| `explore` | data overview → `data_overview.txt` (not tracked) | about 1 min (estimate) |
+| `baselines` | rule baselines → `results/baseline_metrics.csv` | about 8 s (measured) |
+| `coldstart` | new-car rule vs fleet rate → `results/coldstart_metrics.csv` | under 1 min (estimate) |
+| `nowcast` | nowcast with and without status → `results/nowcast_metrics.csv` | about 6 min (measured) |
+| `tuning` | random search, bias, holdout, feature importance → `results/`, `reports/figures/` | about 25 min (measured) |
+| `save_nowcast` | train and save the nowcast model → `models/nowcast_status_2026-07-01.joblib` | about 3 min (estimate) |
+| `backtest` | backtest on the test fleet → `results/backtest_test_fleet.csv` | about 5 min (estimate) |
+| `partb` | thresholds, injected-error test, flags → `results/partb_*.csv`, `data/processed/partb_flagged_rows.csv` | 19 s (measured) |
+| `predict` | train the final forecast model, predict the empty test rows → `submission/predictions_forecast.csv`, `models/forecast_final_2026-07-01.joblib` | 1 min 49 s (measured) |
+| `export` | merge forecast and flags → `submission/predictions.parquet` | 2 s (measured) |
+| `slides` | build `submission/slides.pdf` from `results/` | 1 s (measured) |
+
+Times were measured on 4 CPU cores and 16 GB RAM, one step at a time; "estimate" marks a step that was not timed on its own. `submission` runs `partb`, `predict`, `export`, `slides` in that order. The old per-step commands still work, e.g. `python -m scripts.run_partb`.
 
 ## Demo
-`submission/slides.pdf` (max. 5 Folien) oder `submission/demo.mp4` (1 min): <noch zu erstellen>
+`submission/slides.pdf` (5 slides, English). Open it with any PDF viewer, for example `xdg-open submission/slides.pdf` on Linux, or directly on GitHub. `./run.sh slides` rebuilds it from the result tables.
 
-## Nächste Schritte
-- Saison-Index, Flottentrend, Restkilometer bis zur Vertragsgrenze und Filialmerkmale als Features testen (die Feature-Wichtigkeit zeigt, dass bisher fast nur „Rate × Abstand" zählt).
-- Eine Kreuzvalidierung über Fahrzeuge statt eines einzelnen Splits.
-- Teil B mit dem Nowcast-Modell als Erwartungswert und Unsicherheitsbändern (Quantil-Modelle) statt einfacher Rate, und eine Prüfung mit subtilen Fehlern.
-- Für SIXT: Wöchentlicher Lauf der Flag-Liste zur Prüfung auffälliger Meldungen vor Bewertungs- und Defleet-Entscheidungen. Offen: Abgabeformat und Baseline der Jury klären.
+## Next steps
+- Seasonal index, fleet trend, remaining kilometres to the contract limit and branch features for the forecast (the feature importance shows that almost only "rate × gap" counts today).
+- Cross-validation over vehicles instead of a single split.
+- Error flags with the nowcast as expected value (out-of-fold, with quantile uncertainty bands) and tests with subtle manipulation.
+- For SIXT: run the flag list regularly to review conspicuous readings before valuation and defleet decisions.

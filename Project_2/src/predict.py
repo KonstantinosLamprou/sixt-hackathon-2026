@@ -1,8 +1,8 @@
 """Vorhersage fuer die leeren Zeilen von test_data.parquet (Teil A, Forecast).
 
 - Fahrzeuge MIT bekannter Historie: getuntes Gradient-Boosting-Modell (Konfiguration aus results/best_forecast_params.json),
-  trainiert auf allen Sample-Fahrzeugen UND den bekannten Zeilen der Testfahrzeuge (jeweils nur Daten bis Stichtag minus 133 Tage
-  als Ziel), Stichtag = 2026-07-01.
+  trainiert NUR auf den Sample-Fahrzeugen (Stichtag = 2026-07-01). Der Rueckwaertstest auf den Testfahrzeugen (src/backtest.py)
+  zeigte, dass die fruehe Historie der Testfahrzeuge im Training nichts bringt (MAE 1.400 statt 1.396 km).
 - Fahrzeuge OHNE Historie (149 Neufahrzeuge): Alterskurve aus src/coldstart.py.
 
 Start (aus Project_2/):  python -m scripts.run_predict_test
@@ -37,11 +37,11 @@ def main():
 
     # ---- Training auf allen Fahrzeugen (Sample + bekannte Testhistorie) -----------------------------------------------
     cuts = pd.date_range(fc.TRAIN_START, E - pd.Timedelta(days=HORIZON_DAYS), freq=f"{fc.TRAIN_STEP_DAYS}D")
-    ids = series.vhcl_anon_id.unique()
+    ids = ser_s.vhcl_anon_id.unique()                                   # nur Sample-Fahrzeuge (siehe Rueckwaertstest)
     parts = [fc.make_dataset(series, static, c, ids, cat_maps, sample=True) for c in cuts]
     X_tr = pd.concat([p[1] for p in parts])
     y_tr = pd.concat([(t.km - t.last_km).clip(lower=0) for t, _ in parts])
-    print(f"Training: {len(cuts)} Stichtage, {len(X_tr)} Zeilen, {len(ids)} Fahrzeuge", flush=True)
+    print(f"Training: {len(cuts)} Stichtage, {len(X_tr)} Zeilen, {len(ids)} Fahrzeuge (nur Sample)", flush=True)
     model = HistGradientBoostingRegressor(loss="absolute_error", early_stopping=False, random_state=0, **cfg).fit(X_tr, y_tr)
     joblib.dump({"model": model, "cfg": cfg, "columns": list(X_tr.columns), "cutoff": CUTOFF}, MODELS / "forecast_final_2026-07-01.joblib",
                 compress=3)

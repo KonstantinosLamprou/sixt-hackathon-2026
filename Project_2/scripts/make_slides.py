@@ -64,7 +64,7 @@ def main():
     f = page("Mileage forecast + erroneous-report flags", "One prediction table for all 656,601 test rows: forecast, cold start and error flags")
     if bt is not None:
         b = bt[bt.horizon == "all"].set_index("model").MAE
-        mdl = "m_sample+test_iso" if "m_sample+test_iso" in b.index else b.index[-1]
+        mdl = "m_sample_iso"
         tile(f, 0.05, 0.50, 0.28, 0.27, f"{b[mdl]:,.0f} km", "Forecast MAE, 133 days",
              f"backtest on the real test fleet\nvs {b['b_segment']:,.0f} km best rule, {b['b_last']:,.0f} km naive")
     else:
@@ -97,8 +97,8 @@ def main():
         f.text(0.62, 0.40, "Backtest on the real test fleet", fontsize=13, fontweight="bold", color=INK)
         f.text(0.62, 0.365, "forecast from 18 Feb 2026, compared with the readings\nknown until 1 Jul 2026 (same 133-day setup)", fontsize=10.5, color=MUTED, va="top")
         rows = bt[bt.horizon == "all"].set_index("model").MAE
-        names = {"b_last": "Naive (last value)", "b_segment": "Best rule", "m_sample": "Model", "m_sample+test": "Model + test history",
-                 "m_sample+test_iso": "Model + test history, monotone"}
+        names = {"b_last": "Naive (last value)", "b_segment": "Best rule", "m_sample_iso": "Model (final)",
+                 "m_sample+test_iso": "Model + test history (not used)"}
         for i, (k, lab) in enumerate(names.items()):
             if k in rows.index:
                 f.text(0.62, 0.275 - i * 0.045, f"{lab}", fontsize=11, color=INK)
