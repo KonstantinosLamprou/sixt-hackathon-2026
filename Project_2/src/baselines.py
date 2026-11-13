@@ -4,14 +4,15 @@ Die echte Testdatei: Historie bis 01.07.2026, gesucht sind Staende bis 11.11.202
 Wir bilden das im Sample nach: Stichtag (cutoff) waehlen, nur Daten <= cutoff als Input, Ziel sind die
 tatsaechlichen Messungen in (cutoff, cutoff + 133 Tage].
 
-Usage: python evaluate.py            (Stichtage unten in CUTOFFS)
+Usage (aus Project_2/): python -m scripts.run_baselines
 """
 from pathlib import Path
 
 import pandas as pd
 
-from data import SAMPLE, daily_series, load_raw, split_vehicles, vehicle_static
-from metrics import by_horizon
+from src.config import RESULTS
+from src.data import SAMPLE, daily_series, load_raw, split_vehicles, vehicle_static
+from src.metrics import by_horizon
 
 HORIZON_DAYS = 133
 CUTOFFS = ["2025-10-01", "2026-02-01"]   # Ziel-Ende muss <= 2026-07-01 liegen
@@ -78,7 +79,7 @@ def main():
         res.insert(0, "cutoff", c)
         out.append(res)
         print(res[res.horizon.isin(["alle", "0-14", "31-60", "91-10000"])].round(1).to_string(index=False))
-    results = Path(__file__).parent / "results"
+    results = RESULTS
     results.mkdir(exist_ok=True)
     pd.concat(out).to_csv(results / "baseline_metrics.csv", index=False)
     print("\nGespeichert: results/baseline_metrics.csv")

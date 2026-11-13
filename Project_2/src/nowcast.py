@@ -8,17 +8,18 @@ Leakage-Check: rntl_return_date liegt in 100 % der OnRent-Zeilen am Messtag oder
 zum Zeitpunkt der Zeile bekannte geplante Rueckgabedatum und darf als Feature genutzt werden.
 
 Es werden zwei Modelle auf denselben Zeilen verglichen: ohne Status-Features (nur Historie) und mit Status-Features.
-Usage: python nowcast.py
+Usage (aus Project_2/): python -m scripts.run_nowcast
 """
 from pathlib import Path
 
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
 
-from data import SAMPLE, daily_series, load_raw, split_vehicles, vehicle_static
-from evaluate import add_baselines, make_task
-from metrics import by_horizon
-from model import CAT_COLS, build_features
+from src.config import RESULTS
+from src.data import SAMPLE, daily_series, load_raw, split_vehicles, vehicle_static
+from src.baselines import add_baselines, make_task
+from src.metrics import by_horizon
+from src.forecast import CAT_COLS, build_features
 
 NOWCAST_DAYS = 28                  # maximale Meldeverzoegerung
 CUTOFFS = ["2025-07-01", "2025-10-01", "2026-02-01"]
@@ -94,7 +95,7 @@ def main():
               f"Anteil Ziele mit unveraendertem Stand: {(t.km == t.last_km).mean():.0%}")
         print(res.round(1).to_string(index=False))
 
-    results = Path(__file__).parent / "results"
+    results = RESULTS
     results.mkdir(exist_ok=True)
     pd.concat(out).to_csv(results / "nowcast_metrics.csv", index=False)
 

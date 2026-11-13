@@ -9,8 +9,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-HERE = Path(__file__).resolve().parent
-DATA = HERE / "data"
+from src.config import DATA_DIR
+
+HERE = DATA_DIR.parent
+DATA = DATA_DIR
 SAMPLE = DATA / "data_30_percent_sample.parquet"
 TEST = DATA / "test_data.parquet"
 

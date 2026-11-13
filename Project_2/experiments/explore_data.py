@@ -1,10 +1,11 @@
-"""Datenueberblick fuer Project 2. Usage: python explore_data.py  -> schreibt data_overview.txt"""
+"""Datenueberblick fuer Project 2. Usage (aus Project_2/): python -m experiments.explore_data  -> schreibt data_overview.txt"""
 import io
 from pathlib import Path
 
 import pandas as pd
 
-HERE = Path(__file__).resolve().parent
+from src.config import DATA_DIR, ROOT
+HERE = ROOT
 FILES = ["data_30_percent_sample.parquet", "test_data.parquet"]
 out = io.StringIO()
 
@@ -16,7 +17,7 @@ def p(*a):
 pd.set_option("display.width", 250, "display.max_columns", 50, "display.max_colwidth", 40)
 dfs = {}
 for f in FILES:
-    df = pd.read_parquet(HERE / "data" / f)
+    df = pd.read_parquet(DATA_DIR / f)
     dfs[f] = df
     p("=" * 100, f"\nDATEI: {f}  shape={df.shape}  RAM={df.memory_usage(deep=True).sum()/1e6:.0f} MB\n", "=" * 100)
     p("\n-- dtypes / fehlend / eindeutige Werte --")
@@ -63,5 +64,5 @@ if len(dfs) == 2:
         s = set(a.vhcl_anon_id)
         p(f"Fahrzeuge in test: {b.vhcl_anon_id.nunique()}, davon auch in sample: {len(s & set(b.vhcl_anon_id))}")
 
-(HERE / "data_overview.txt").write_text(out.getvalue())
+(ROOT / "data_overview.txt").write_text(out.getvalue())
 print("geschrieben:", HERE / "data_overview.txt")

@@ -6,7 +6,7 @@ Ablauf (pro Evaluations-Stichtag E):
   2. Nur Trainingsfahrzeuge (Holdout-Fahrzeuge werden NIE zum Training benutzt).
   3. Bewertung auf Holdout-Fahrzeugen am Stichtag E, zusammen mit den Baselines (gleiche Zeilen!).
 
-Usage: python model.py
+Usage (aus Project_2/): python -m scripts.run_forecast
 """
 from pathlib import Path
 
@@ -14,9 +14,10 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
 
-from data import SAMPLE, daily_series, load_raw, split_vehicles, vehicle_static
-from evaluate import CUTOFFS, HORIZON_DAYS, add_baselines, make_task
-from metrics import by_horizon
+from src.config import RESULTS
+from src.data import SAMPLE, daily_series, load_raw, split_vehicles, vehicle_static
+from src.baselines import CUTOFFS, HORIZON_DAYS, add_baselines, make_task
+from src.metrics import by_horizon
 
 TRAIN_START = "2022-07-01"
 TRAIN_STEP_DAYS = 45
@@ -93,7 +94,7 @@ def main():
         show = res[res.horizon.isin(["alle", "0-14", "31-60", "91-10000"]) & res.model.isin(["b_last", "b_segment", "b_rate_all", "m_gboost"])]
         print(show.round(1).to_string(index=False))
 
-    results = Path(__file__).parent / "results"
+    results = RESULTS
     results.mkdir(exist_ok=True)
     pd.concat(out).to_csv(results / "model_metrics.csv", index=False)
     print("\nGespeichert: results/model_metrics.csv")

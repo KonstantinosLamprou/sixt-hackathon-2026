@@ -5,17 +5,18 @@ Verglichen werden drei Regeln:
   fleet_rate  : Start 0 + Segment-Median-Rate (wie b_segment) x Tage seit erster Zeile
   age_curve   : coldstart.py (Startstand + mediane Wachstumskurve nach Alter)
 
-Usage: python evaluate_coldstart.py
+Usage (aus Project_2/): python -m scripts.run_coldstart
 """
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from coldstart import HORIZON_DAYS, fit_age_curve, new_vehicle_ids, predict_from_age
-from data import SAMPLE, daily_series, load_raw, split_vehicles, vehicle_static
-from evaluate import make_task
-from metrics import summarize
+from src.coldstart import HORIZON_DAYS, fit_age_curve, new_vehicle_ids, predict_from_age
+from src.config import RESULTS
+from src.data import SAMPLE, daily_series, load_raw, split_vehicles, vehicle_static
+from src.baselines import make_task
+from src.metrics import summarize
 
 CUTOFFS = ["2025-07-01", "2025-10-01", "2026-02-01"]
 
@@ -50,7 +51,7 @@ def main():
             rows.append({"cutoff": E.date(), "rule": m, **r})
             print(f"  {m:11s} MAE {r['MAE']:7.0f}  MedAE {r['MedAE']:7.0f}  WAPE {r['WAPE_%']:5.1f}%  bias {r['bias']:7.0f}")
 
-    out = Path(__file__).parent / "results"
+    out = RESULTS
     out.mkdir(exist_ok=True)
     pd.DataFrame(rows).to_csv(out / "coldstart_metrics.csv", index=False)
 

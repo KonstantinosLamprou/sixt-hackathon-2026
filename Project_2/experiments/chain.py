@@ -8,7 +8,7 @@ Zeile: Miete laeuft weiter, solange das geplante Rueckgabedatum >= E ist; sonst 
 
 Vergleich auf denselben Holdout-Zeilen: b_segment, m_forecast (wie model.py), m_chain_hist (Nowcast ohne Status),
 m_chain_status (Nowcast mit Status). Zusaetzlich getrennt nach Alter der letzten Messung.
-Usage: python chain.py
+Usage (aus Project_2/): python -m experiments.chain
 """
 from pathlib import Path
 
@@ -16,11 +16,12 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
 
-import model as fc
-import nowcast as nc
-from data import SAMPLE, daily_series, load_raw, split_vehicles, vehicle_static
-from evaluate import CUTOFFS, HORIZON_DAYS, add_baselines
-from metrics import summarize
+import src.forecast as fc
+import src.nowcast as nc
+from src.config import RESULTS
+from src.data import SAMPLE, daily_series, load_raw, split_vehicles, vehicle_static
+from src.baselines import CUTOFFS, HORIZON_DAYS, add_baselines
+from src.metrics import summarize
 
 VEH_COLS = ["vhcl_anon_id", "last_date", "last_km", "first_date", "n_hist", "rate_all", "rate_30", "rate_90", "rate_180"]
 SUBSETS = {"alle": lambda s: s >= 0, "stale<=7": lambda s: s <= 7, "stale>7": lambda s: s > 7, "stale>14": lambda s: s > 14}
@@ -100,7 +101,7 @@ def main():
         print(res[res.cutoff == E].pivot(index="subset", columns="model", values="MAE").loc[list(SUBSETS)].round(0).to_string())
         print("n:", {k: int(v) for k, v in res[(res.cutoff == E) & (res.model == "m_forecast")].set_index("subset").n.items()})
 
-    out = Path(__file__).parent / "results"
+    out = RESULTS
     out.mkdir(exist_ok=True)
     pd.DataFrame(rows).to_csv(out / "chain_metrics.csv", index=False)
 

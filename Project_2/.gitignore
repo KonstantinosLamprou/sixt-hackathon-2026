@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.venv/
+# Grosse Zwischentabellen (Datensaetze) bleiben draussen, Modelle/Ergebnisse/kleine Ausgaben sind erlaubt
+data/interim/
+data_overview.txt
